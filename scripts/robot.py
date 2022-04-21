@@ -8,14 +8,14 @@ import numpy as np
 import rospy
 from visualization_msgs.msg import MarkerArray
 from nav_msgs.msg import Odometry
-from geometry_msgs.msg import Pose2D, Twist
+from geometry_msgs.msg import Pose2D, Twist, Vector3
 from autoware_msgs.msg import Pose2DArray, TrackingObjectMarker, TrackingObjectMarkerArray
 
 from sensor_msgs.msg import Image
 
 import time
 from informer import Informer
-from proto.python_out import marker_msgs_pb2, geometry_msgs_pb2, path_msgs_pb2, cmd_msgs_pb2
+from proto.python_out import marker_msgs_pb2, geometry_msgs_pb2, path_msgs_pb2, cmd_msgs_pb2, ctrl_msgs_pb2
 
 def parse_path(message):
     global path_pub
@@ -32,6 +32,19 @@ def parse_path(message):
         ros_pose_array.poses.append(ros_pose)
 
     path_pub.publish(ros_pose_array)
+
+
+def parse_ctrl(message):
+    global ctrl_pub
+    ctrl = ctrl_msgs_pb2.Ctrl()
+    ctrl.ParseFromString(message)
+
+    ros_ctrl = Vector3()
+    ros_ctrl.x = ctrl.flag
+    ros_ctrl.y = ctrl.v
+    ros_ctrl.z = ctrl.w
+    print('publish ctrl:', ros_ctrl)
+    ctrl_pub.publish(ros_ctrl)
 
 class Client(Informer):
     def send_msg(self, message):
@@ -51,6 +64,12 @@ class Client(Informer):
             self.recv('path', parse_path)
         except:
             print('recv path timeout !')
+
+    def ctrl_recv(self):
+        if True:#try:
+            self.recv('ctrl', parse_ctrl)
+        # except:
+            # print('recv ctrl timeout !')
 
 def ros_marker2pb(ros_marker : TrackingObjectMarker):
     marker = marker_msgs_pb2.Marker()
@@ -132,6 +151,7 @@ if __name__ == '__main__':
     rospy.init_node('vehicle_5g_transfer', anonymous=True)
     ifm = Client(config = 'config.yaml')
     path_pub = rospy.Publisher('/global_path', Pose2DArray, queue_size=0)
+    ctrl_pub = rospy.Publisher('/manual_ctrl', Vector3, queue_size=0)
     rospy.Subscriber('/detection/lidar_detector/objects_markers_withID', TrackingObjectMarkerArray, callback_mark_array)
     rospy.Subscriber('/base2odometry', Odometry, callback_odometry)
     rospy.Subscriber('/camera/color/image_raw', Image, callback_img)

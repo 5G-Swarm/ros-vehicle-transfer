@@ -29,3 +29,6 @@ message_info:
         port: 10005
         width: 640
         height: 480
+    ctrl:
+        is_tcp: True
+        port: 10006
