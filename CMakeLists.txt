@@ -6,6 +6,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   message_generation
   std_msgs
+  nav_msgs
   geometry_msgs
   sensor_msgs
   visualization_msgs
@@ -21,6 +22,7 @@ find_package(catkin REQUIRED COMPONENTS
 generate_messages(
   DEPENDENCIES
   std_msgs
+  nav_msgs
   sensor_msgs
   geometry_msgs
   visualization_msgs

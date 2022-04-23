@@ -7,10 +7,9 @@ import cv2
 import numpy as np
 import rospy
 from visualization_msgs.msg import MarkerArray
-from nav_msgs.msg import Odometry
-from geometry_msgs.msg import Pose2D, Twist, Vector3
-from autoware_msgs.msg import Pose2DArray, TrackingObjectMarker, TrackingObjectMarkerArray
-
+from nav_msgs.msg import Odometry, Path
+from geometry_msgs.msg import Twist, Vector3, PoseStamped
+from autoware_msgs.msg import TrackingObjectMarker, TrackingObjectMarkerArray
 from sensor_msgs.msg import Image
 
 import time
@@ -19,20 +18,21 @@ from proto.python_out import marker_msgs_pb2, geometry_msgs_pb2, path_msgs_pb2, 
 
 def parse_path(message):
     global path_pub
+    print('recv path')
     path = path_msgs_pb2.Path()
     path.ParseFromString(message)
 
-    ros_pose_array = Pose2DArray()
+    ros_pose_array = Path()
+    ros_pose_array.header.frame_id = "map"
+    ros_pose_array.header.stamp = rospy.Time.now()
     for pose in path.poses:
-        ros_pose = Pose2D()
-        ros_pose.x = pose.x
-        ros_pose.y = pose.y
-        ros_pose.theta = pose.theta
-
+        ros_pose = PoseStamped()
+        ros_pose.pose.position.x = pose.x
+        ros_pose.pose.position.y = pose.y
+        ros_pose.pose.position.z = pose.theta
         ros_pose_array.poses.append(ros_pose)
 
     path_pub.publish(ros_pose_array)
-
 
 def parse_ctrl(message):
     global ctrl_pub
@@ -60,10 +60,10 @@ class Client(Informer):
         self.send(message, 'img')
     
     def path_recv(self):
-        try:
-            self.recv('path', parse_path)
-        except:
-            print('recv path timeout !')
+        # try:
+        self.recv('path', parse_path)
+        # except:
+            # print('recv path timeout !')
 
     def ctrl_recv(self):
         if True:#try:
@@ -150,7 +150,7 @@ def callback_img(ros_img):
 if __name__ == '__main__':
     rospy.init_node('vehicle_5g_transfer', anonymous=True)
     ifm = Client(config = 'config.yaml')
-    path_pub = rospy.Publisher('/global_path', Pose2DArray, queue_size=0)
+    path_pub = rospy.Publisher('/global_path', Path, queue_size=0)
     ctrl_pub = rospy.Publisher('/manual_ctrl', Vector3, queue_size=0)
     rospy.Subscriber('/detection/lidar_detector/objects_markers_withID', TrackingObjectMarkerArray, callback_mark_array)
     rospy.Subscriber('/base2odometry', Odometry, callback_odometry)
