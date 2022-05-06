@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import ctypes
-libgcc_s = ctypes.CDLL('/lib/x86_64-linux-gnu/libgcc_s.so.1')
-
 import cv2
 import numpy as np
 import rospy
@@ -16,7 +13,7 @@ import time
 from informer import Informer
 from proto.python_out import marker_msgs_pb2, geometry_msgs_pb2, path_msgs_pb2, cmd_msgs_pb2, ctrl_msgs_pb2
 
-def parse_path(message):
+def parse_path(message, robot_id):
     global path_pub
     print('recv path')
     path = path_msgs_pb2.Path()
@@ -34,7 +31,7 @@ def parse_path(message):
 
     path_pub.publish(ros_pose_array)
 
-def parse_ctrl(message):
+def parse_ctrl(message, robot_id):
     global ctrl_pub
     ctrl = ctrl_msgs_pb2.Ctrl()
     ctrl.ParseFromString(message)
