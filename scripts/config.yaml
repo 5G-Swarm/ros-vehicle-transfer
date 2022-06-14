@@ -34,3 +34,6 @@ message_info:
     ctrl:
         is_tcp: True
         port: 16000
+    recg:
+        is_tcp: True
+        port: 17000

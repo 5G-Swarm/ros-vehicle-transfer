@@ -8,6 +8,7 @@ from nav_msgs.msg import Odometry, Path
 from geometry_msgs.msg import Twist, Vector3, PoseStamped
 from autoware_msgs.msg import TrackingObjectMarker, TrackingObjectMarkerArray
 from sensor_msgs.msg import Image
+from std_msgs.msg import String
 
 import time
 from informer import Informer
@@ -15,7 +16,7 @@ from proto.python_out import marker_msgs_pb2, geometry_msgs_pb2, path_msgs_pb2, 
 
 def parse_path(message, robot_id):
     global path_pub
-    print('recv path')
+    # print('recv path', robot_id)
     path = path_msgs_pb2.Path()
     path.ParseFromString(message)
 
@@ -55,6 +56,9 @@ class Client(Informer):
 
     def send_img(self, message):
         self.send(message, 'img')
+
+    def send_recg(self, message):
+        self.send(message, 'recg')
     
     def path_recv(self):
         # try:
@@ -143,16 +147,22 @@ def callback_img(ros_img):
     # cv2.imshow('img', img)
     # cv2.waitKey(2)
 
+def callback_recg(ros_string):
+    global ifm
+    sent_data = ros_string.data.encode()
+    ifm.send_recg(sent_data)
+
 
 if __name__ == '__main__':
     rospy.init_node('vehicle_5g_transfer', anonymous=True)
     ifm = Client(config = 'config.yaml')
-    path_pub = rospy.Publisher('/global_path', Path, queue_size=0)
+    path_pub = rospy.Publisher('/global_path_gps', Path, queue_size=0)
     ctrl_pub = rospy.Publisher('/manual_ctrl', Vector3, queue_size=0)
     rospy.Subscriber('/detection/lidar_detector/objects_markers_withID', TrackingObjectMarkerArray, callback_mark_array)
-    rospy.Subscriber('/base2odometry', Odometry, callback_odometry)
+    rospy.Subscriber('/base2gps', Odometry, callback_odometry)
     rospy.Subscriber('/camera/color/image_raw', Image, callback_img)
     rospy.Subscriber('/cmd_vel', Twist, callback_cmd)
+    rospy.Subscriber('/license_plate_recognition', String, callback_recg)
 
     # rospy.spin()
     rate = rospy.Rate(1000)
